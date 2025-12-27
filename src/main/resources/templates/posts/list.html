@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>게시판 - CMC Board</title>
+</head>
+
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid px-4 py-5">
+        <!-- Hero Section -->
+        <div class="hero-section mb-5">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="display-4 fw-bold mb-3">
+                        <span class="gradient-text">Discover</span> Stories
+                    </h1>
+                    <p class="lead text-muted">커뮤니티의 다양한 이야기를 탐색하고 공유해보세요</p>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <a href="/board/write" class="btn btn-primary btn-lg write-btn" 
+                       sec:authorize="isAuthenticated()">
+                        <i class="bi bi-plus-circle me-2"></i>새 글 작성
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Sidebar - Categories -->
+            <div class="col-lg-3 mb-4">
+                <div class="category-card">
+                    <h5 class="card-title mb-4">
+                        <i class="bi bi-tags me-2"></i>카테고리
+                    </h5>
+                    
+                    <div class="category-list">
+                        <a th:href="@{/board}" 
+                           class="category-item"
+                           th:classappend="${selectedCategoryId == null} ? 'active' : ''">
+                            <i class="bi bi-grid-3x3-gap me-2"></i>
+                            <span>전체보기</span>
+                        </a>
+                        
+                        <a th:each="category : ${categories}"
+                           th:href="@{/board(categoryId=${category.id})}"
+                           class="category-item"
+                           th:classappend="${category.id == selectedCategoryId} ? 'active' : ''">
+                            <i class="bi bi-tag me-2"></i>
+                            <span th:text="${category.name}">카테고리</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Search Box -->
+                <div class="search-card mt-4">
+                    <h5 class="card-title mb-3">
+                        <i class="bi bi-search me-2"></i>검색
+                    </h5>
+                    <form th:action="@{/board}" method="get">
+                        <div class="input-group">
+                            <input type="text" 
+                                   class="form-control" 
+                                   name="keyword" 
+                                   th:value="${keyword}"
+                                   placeholder="제목 또는 내용 검색...">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Main Content - Post List -->
+            <div class="col-lg-9">
+                <div class="posts-container">
+                    <!-- Post Cards -->
+                    <div class="post-card" th:each="post : ${posts.content}">
+                        <div class="post-card-header">
+                            <div class="post-meta">
+                                <span class="author">
+                                    <i class="bi bi-person-circle me-1"></i>
+                                    <span th:text="${post.user.username}">작성자</span>
+                                </span>
+                                <span class="divider">•</span>
+                                <span class="date" th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">
+                                    2025-01-01 12:00
+                                </span>
+                            </div>
+                            
+                            <div class="post-categories">
+                                <span class="badge" 
+                                      th:each="pc : ${post.postCategories}" 
+                                      th:text="${pc.category.name}">
+                                    카테고리
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="post-card-body">
+                            <h3 class="post-title">
+                                <a th:href="@{/board/{id}(id=${post.id})}" 
+                                   th:text="${post.title}">
+                                    게시글 제목
+                                </a>
+                            </h3>
+                            
+                            <p class="post-excerpt" 
+                               th:text="${#strings.abbreviate(post.content, 150)}">
+                                게시글 내용의 일부가 여기에 표시됩니다...
+                            </p>
+                        </div>
+                        
+                        <div class="post-card-footer">
+                            <div class="post-stats">
+                                <span class="stat-item">
+                                    <i class="bi bi-chat-dots me-1"></i>
+                                    <span th:text="${post.comments.size()}">0</span>
+                                </span>
+                                <span class="stat-item">
+                                    <i class="bi bi-eye me-1"></i>
+                                    <span>0</span>
+                                </span>
+                            </div>
+                            
+                            <a th:href="@{/board/{id}(id=${post.id})}" 
+                               class="btn btn-sm btn-outline-primary read-more">
+                                자세히 보기
+                                <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div th:if="${posts.content.isEmpty()}" class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <h3>게시글이 없습니다</h3>
+                        <p>첫 번째 게시글을 작성해보세요!</p>
+                        <a href="/board/write" 
+                           class="btn btn-primary"
+                           sec:authorize="isAuthenticated()">
+                            <i class="bi bi-plus-circle me-2"></i>글 작성하기
+                        </a>
+                    </div>
+
+                    <!-- Pagination -->
+                    <nav th:if="${!posts.content.isEmpty()}" class="pagination-wrapper">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item" th:classappend="${!posts.hasPrevious()} ? 'disabled'">
+                                <a class="page-link" 
+                                   th:href="@{/board(page=${posts.number - 1}, categoryId=${selectedCategoryId}, keyword=${keyword})}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                            
+                            <li class="page-item" 
+                                th:each="i : ${#numbers.sequence(0, posts.totalPages - 1)}"
+                                th:if="${i >= posts.number - 2 && i <= posts.number + 2}"
+                                th:classappend="${i == posts.number} ? 'active'">
+                                <a class="page-link" 
+                                   th:href="@{/board(page=${i}, categoryId=${selectedCategoryId}, keyword=${keyword})}"
+                                   th:text="${i + 1}">
+                                    1
+                                </a>
+                            </li>
+                            
+                            <li class="page-item" th:classappend="${!posts.hasNext()} ? 'disabled'">
+                                <a class="page-link" 
+                                   th:href="@{/board(page=${posts.number + 1}, categoryId=${selectedCategoryId}, keyword=${keyword})}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="extra-js">
+    <script>
+        // 부드러운 스크롤 애니메이션
+        document.addEventListener('DOMContentLoaded', function() {
+            const postCards = document.querySelectorAll('.post-card');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry, index) => {
+                    if (entry.isIntersecting) {
+                        setTimeout(() => {
+                            entry.target.classList.add('visible');
+                        }, index * 100);
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            postCards.forEach(card => observer.observe(card));
+        });
+    </script>
+</th:block>
+</body>
+</html>

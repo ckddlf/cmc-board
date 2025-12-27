@@ -1,5 +1,6 @@
 package com.example.board.controller;
 
+import com.example.board.domain.post.Post;
 import com.example.board.domain.post.PostRepository;
 import com.example.board.dto.post.PostCreateRequest;
 import com.example.board.dto.post.PostResponse;
@@ -41,7 +42,7 @@ public class PostController {
         .map(PostResponse::from)
         .toList();
     }
-
+   
      @PutMapping("/{id}")
     public void update(
             @PathVariable Long id,

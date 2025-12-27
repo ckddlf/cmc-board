@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title th:text="${post.title} + ' - CMC Board'">게시글 - CMC Board</title>
+</head>
+
+<body>
+<div layout:fragment="content">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Back Button -->
+                <a href="/board" class="btn btn-outline-secondary mb-4 back-btn">
+                    <i class="bi bi-arrow-left me-2"></i>목록으로
+                </a>
+
+                <!-- Post Detail Card -->
+                <article class="post-detail-card">
+                    <!-- Header -->
+                    <header class="post-header">
+                        <div class="post-categories mb-3">
+                            <span class="badge" 
+                                  th:each="category : ${post.categories}"
+                                  th:text="${category.name}">
+                                카테고리
+                            </span>
+                        </div>
+                        
+                        <h1 class="post-title" th:text="${post.title}">게시글 제목</h1>
+                        
+                        <div class="post-meta-bar">
+                            <div class="author-info">
+                                <div class="avatar">
+                                    <i class="bi bi-person-circle"></i>
+                                </div>
+                                <div>
+                                    <div class="author-name" th:text="${post.user.username}">작성자</div>
+                                    <div class="post-date" 
+                                         th:text="${#temporals.format(post.createdAt, 'yyyy년 MM월 dd일 HH:mm')}">
+                                        2025년 01월 01일 12:00
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="post-actions" th:if="${isOwner}">
+                                <a th:href="@{/board/{id}/edit(id=${post.id})}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-pencil me-1"></i>수정
+                                </a>
+                                <button class="btn btn-outline-danger btn-sm" 
+                                        onclick="deletePost()">
+                                    <i class="bi bi-trash me-1"></i>삭제
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <!-- Content -->
+                    <div class="post-content" th:utext="${contentWithBr}">
+                     게시글 내용
+                    </div>
+
+                    <!-- Footer Actions -->
+                    <footer class="post-footer">
+                        <div class="post-stats">
+                            <span class="stat-item">
+                                <i class="bi bi-chat-dots me-1"></i>
+                                댓글 <strong th:text="${post.comments.size()}">0</strong>
+                            </span>
+                            <span class="stat-item">
+                                <i class="bi bi-eye me-1"></i>
+                                조회 <strong>0</strong>
+                            </span>
+                        </div>
+                        
+                        <button class="btn btn-bookmark" 
+                                th:attr="data-post-id=${post.id}"
+                                onclick="toggleBookmark(this)"
+                                sec:authorize="isAuthenticated()">
+                            <i class="bi bi-bookmark"></i>
+                            <span>북마크</span>
+                        </button>
+                    </footer>
+                </article>
+
+                <!-- Comments Section -->
+                <section class="comments-section mt-5">
+                    <h3 class="comments-title mb-4">
+                        <i class="bi bi-chat-left-text me-2"></i>
+                        댓글 <span class="badge bg-primary" th:text="${post.comments.size()}">0</span>
+                    </h3>
+
+                    <!-- Comment Form -->
+                    <div class="comment-form-card mb-4" sec:authorize="isAuthenticated()">
+                        <form id="commentForm" onsubmit="submitComment(event)">
+                            <input type="hidden" th:value="${post.id}" id="postId">
+                            <div class="mb-3">
+                                <textarea class="form-control comment-textarea" 
+                                          id="commentContent"
+                                          rows="4" 
+                                          placeholder="댓글을 작성해주세요..."
+                                          required></textarea>
+                            </div>
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-send me-2"></i>댓글 작성
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div sec:authorize="!isAuthenticated()" class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        댓글을 작성하려면 <a href="/auth/login">로그인</a>이 필요합니다.
+                    </div>
+
+                    <!-- Comments List -->
+                    <div class="comments-list" id="commentsList">
+                        <div class="comment-item" 
+                             th:each="comment : ${post.comments}"
+                             th:if="${comment.parent == null}"
+                             th:attr="data-comment-id=${comment.id}">
+                            <div class="comment-avatar">
+                                <i class="bi bi-person-circle"></i>
+                            </div>
+                            <div class="comment-content-wrapper">
+                                <div class="comment-header">
+                                    <strong class="comment-author" th:text="${comment.user.username}">작성자</strong>
+                                    <span class="comment-date" 
+                                          th:text="${#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm')}">
+                                        2025-01-01 12:00
+                                    </span>
+                                </div>
+                                <div class="comment-body" th:text="${comment.content}">
+                                    댓글 내용
+                                </div>
+                                <div class="comment-actions">
+                                    <button class="btn btn-link btn-sm" 
+                                            th:attr="onclick='showReplyForm(' + ${comment.id} + ')'"
+                                            sec:authorize="isAuthenticated()">
+                                        <i class="bi bi-reply me-1"></i>답글
+                                    </button>
+                                    <button class="btn btn-link btn-sm text-danger" 
+                                            th:if="${#authentication.name == comment.user.username}"
+                                            th:attr="onclick='deleteComment(' + ${comment.id} + ')'">
+                                        <i class="bi bi-trash me-1"></i>삭제
+                                    </button>
+                                </div>
+
+                                <!-- Reply Form (Hidden by default) -->
+                                <div class="reply-form mt-3" 
+                                     th:id="'replyForm-' + ${comment.id}" 
+                                     style="display: none;"
+                                     sec:authorize="isAuthenticated()">
+                                    <form th:attr="onsubmit='submitReply(event, ' + ${comment.id} + ')'">
+                                        <textarea class="form-control mb-2" 
+                                                  rows="3" 
+                                                  placeholder="답글을 작성해주세요..."
+                                                  required></textarea>
+                                        <div class="text-end">
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-secondary me-2"
+                                                    th:attr="onclick='hideReplyForm(' + ${comment.id} + ')'">
+                                                취소
+                                            </button>
+                                            <button type="submit" class="btn btn-sm btn-primary">
+                                                답글 작성
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <!-- Replies -->
+                                <div class="replies" th:if="${!comment.replies.isEmpty()}">
+                                    <div class="comment-item reply" 
+                                         th:each="reply : ${comment.replies}">
+                                        <div class="comment-avatar">
+                                            <i class="bi bi-person-circle"></i>
+                                        </div>
+                                        <div class="comment-content-wrapper">
+                                            <div class="comment-header">
+                                                <strong class="comment-author" th:text="${reply.user.username}">작성자</strong>
+                                                <span class="comment-date" 
+                                                      th:text="${#temporals.format(reply.createdAt, 'yyyy-MM-dd HH:mm')}">
+                                                    2025-01-01 12:00
+                                                </span>
+                                            </div>
+                                            <div class="comment-body" th:text="${reply.content}">
+                                                답글 내용
+                                            </div>
+                                            <div class="comment-actions">
+                                                <button class="btn btn-link btn-sm text-danger" 
+                                                        th:if="${#authentication.name == reply.user.username}"
+                                                        th:attr="onclick='deleteComment(' + ${reply.id} + ')'">
+                                                    <i class="bi bi-trash me-1"></i>삭제
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div th:if="${post.comments.isEmpty()}" class="empty-comments">
+                            <i class="bi bi-chat-dots"></i>
+                            <p>첫 번째 댓글을 작성해보세요!</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="extra-js">
+    <script th:inline="javascript">
+        const postId = /*[[${post.id}]]*/ 1;
+        const isAuthenticated = /*[[${isAuthenticated}]]*/ false;
+
+        // 게시글 삭제
+        function deletePost() {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+            
+            fetch(`/posts/${postId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('게시글이 삭제되었습니다.');
+                    window.location.href = '/board';
+                } else {
+                    alert('삭제 권한이 없습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('삭제 중 오류가 발생했습니다.');
+            });
+        }
+
+        // 댓글 작성
+        function submitComment(event) {
+            event.preventDefault();
+            
+            const content = document.getElementById('commentContent').value;
+            
+            fetch('/comments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `postId=${postId}&content=${encodeURIComponent(content)}`
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('댓글이 작성되었습니다.');
+                    location.reload();
+                } else {
+                    alert('댓글 작성에 실패했습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('댓글 작성 중 오류가 발생했습니다.');
+            });
+        }
+
+        // 답글 작성
+        function submitReply(event, parentId) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const content = form.querySelector('textarea').value;
+            
+            fetch('/comments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `postId=${postId}&parentId=${parentId}&content=${encodeURIComponent(content)}`
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('답글이 작성되었습니다.');
+                    location.reload();
+                } else {
+                    alert('답글 작성에 실패했습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('답글 작성 중 오류가 발생했습니다.');
+            });
+        }
+
+        // 댓글 삭제
+        function deleteComment(commentId) {
+            if (!confirm('댓글을 삭제하시겠습니까?')) return;
+            
+            fetch(`/comments/${commentId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('댓글이 삭제되었습니다.');
+                    location.reload();
+                } else {
+                    alert('삭제 권한이 없습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('삭제 중 오류가 발생했습니다.');
+            });
+        }
+
+        // 답글 폼 표시
+        function showReplyForm(commentId) {
+            document.getElementById(`replyForm-${commentId}`).style.display = 'block';
+        }
+
+        // 답글 폼 숨기기
+        function hideReplyForm(commentId) {
+            document.getElementById(`replyForm-${commentId}`).style.display = 'none';
+        }
+
+        // 북마크 토글
+        function toggleBookmark(button) {
+            const postId = button.dataset.postId;
+            const icon = button.querySelector('i');
+            const isBookmarked = icon.classList.contains('bi-bookmark-fill');
+            
+            if (isBookmarked) {
+                // 북마크 제거 로직 (구현 필요)
+                icon.classList.remove('bi-bookmark-fill');
+                icon.classList.add('bi-bookmark');
+            } else {
+                fetch(`/bookmarks/${postId}`, {
+                    method: 'POST'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        icon.classList.remove('bi-bookmark');
+                        icon.classList.add('bi-bookmark-fill');
+                        showToast('북마크에 추가되었습니다.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+
+        // 토스트 알림
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 100);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</th:block>
+</body>
+</html>

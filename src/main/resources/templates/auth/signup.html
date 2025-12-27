@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>회원가입 - CMC Board</title>
+</head>
+
+<body>
+<div layout:fragment="content">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-icon">
+                    <i class="bi bi-person-plus-fill"></i>
+                </div>
+                <h2 class="auth-title">Join Us</h2>
+                <p class="auth-subtitle">새로운 여정을 시작하세요</p>
+            </div>
+
+            <form id="signupForm" onsubmit="signup(event)">
+                <div class="mb-4">
+                    <label for="username" class="form-label">
+                        <i class="bi bi-person me-2"></i>아이디
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" 
+                           class="form-control form-control-lg" 
+                           id="username" 
+                           name="username"
+                           placeholder="4~20자의 영문, 숫자"
+                           pattern="[a-zA-Z0-9]{4,20}"
+                           required
+                           autofocus>
+                    <small class="form-text text-muted">
+                        영문자와 숫자를 사용하여 4~20자로 입력해주세요.
+                    </small>
+                </div>
+
+                <div class="mb-4">
+                    <label for="password" class="form-label">
+                        <i class="bi bi-lock me-2"></i>비밀번호
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input type="password" 
+                           class="form-control form-control-lg" 
+                           id="password" 
+                           name="password"
+                           placeholder="8자 이상"
+                           minlength="8"
+                           required>
+                    <div class="password-strength mt-2">
+                        <div class="strength-bar">
+                            <div class="strength-progress" id="strengthProgress"></div>
+                        </div>
+                        <small class="strength-text" id="strengthText">비밀번호를 입력하세요</small>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="passwordConfirm" class="form-label">
+                        <i class="bi bi-lock-fill me-2"></i>비밀번호 확인
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input type="password" 
+                           class="form-control form-control-lg" 
+                           id="passwordConfirm" 
+                           name="passwordConfirm"
+                           placeholder="비밀번호를 다시 입력하세요"
+                           required>
+                    <small class="form-text" id="passwordMatch"></small>
+                </div>
+
+                <div class="mb-4 form-check">
+                    <input type="checkbox" class="form-check-input" id="agreeTerms" required>
+                    <label class="form-check-label" for="agreeTerms">
+                        <a href="#" class="text-primary">이용약관</a> 및 
+                        <a href="#" class="text-primary">개인정보처리방침</a>에 동의합니다
+                        <span class="text-danger">*</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">
+                    <i class="bi bi-check-circle me-2"></i>회원가입
+                </button>
+
+                <div class="text-center">
+                    <p class="text-muted">
+                        이미 계정이 있으신가요?
+                        <a href="/auth/login" class="text-primary fw-bold">로그인</a>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="extra-js">
+    <script>
+        // 비밀번호 강도 체크
+        document.getElementById('password').addEventListener('input', function(e) {
+            const password = e.target.value;
+            const progressBar = document.getElementById('strengthProgress');
+            const strengthText = document.getElementById('strengthText');
+            
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (password.length >= 12) strength++;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^a-zA-Z0-9]/.test(password)) strength++;
+            
+            const percentage = (strength / 5) * 100;
+            progressBar.style.width = percentage + '%';
+            
+            if (strength <= 1) {
+                progressBar.className = 'strength-progress weak';
+                strengthText.textContent = '약한 비밀번호';
+                strengthText.className = 'strength-text text-danger';
+            } else if (strength <= 3) {
+                progressBar.className = 'strength-progress medium';
+                strengthText.textContent = '보통 비밀번호';
+                strengthText.className = 'strength-text text-warning';
+            } else {
+                progressBar.className = 'strength-progress strong';
+                strengthText.textContent = '강한 비밀번호';
+                strengthText.className = 'strength-text text-success';
+            }
+        });
+
+        // 비밀번호 확인
+        document.getElementById('passwordConfirm').addEventListener('input', function(e) {
+            const password = document.getElementById('password').value;
+            const passwordConfirm = e.target.value;
+            const matchText = document.getElementById('passwordMatch');
+            
+            if (passwordConfirm === '') {
+                matchText.textContent = '';
+                return;
+            }
+            
+            if (password === passwordConfirm) {
+                matchText.textContent = '✓ 비밀번호가 일치합니다';
+                matchText.className = 'form-text text-success';
+            } else {
+                matchText.textContent = '✗ 비밀번호가 일치하지 않습니다';
+                matchText.className = 'form-text text-danger';
+            }
+        });
+
+        // 회원가입
+        function signup(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const passwordConfirm = document.getElementById('passwordConfirm').value;
+            
+            // 유효성 검증
+            if (password !== passwordConfirm) {
+                alert('비밀번호가 일치하지 않습니다.');
+                return;
+            }
+            
+            if (!document.getElementById('agreeTerms').checked) {
+                alert('이용약관에 동의해주세요.');
+                return;
+            }
+            
+            // API 호출
+            fetch('/auth/signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.text();
+                } else {
+                    throw new Error('회원가입에 실패했습니다.');
+                }
+            })
+            .then(data => {
+                alert('회원가입이 완료되었습니다! 로그인 해주세요.');
+                window.location.href = '/auth/login';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('이미 존재하는 아이디이거나 회원가입 중 오류가 발생했습니다.');
+            });
+        }
+    </script>
+</th:block>
+</body>
+</html>

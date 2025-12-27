@@ -43,26 +43,33 @@
                         </a>
                     </li>
                     
-                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <!-- 카테고리 관리 (관리자) -->
+                    <li class="nav-item" th:if="${#authorization.expression('isAuthenticated()')}">
+                        <a class="nav-link" href="/admin/categories">
+                            <i class="bi bi-tags me-1"></i>카테고리 관리
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item" th:if="${#authorization.expression('isAuthenticated()')}">
                         <a class="nav-link" href="/board/write">
                             <i class="bi bi-pencil-square me-1"></i>글쓰기
                         </a>
                     </li>
                     
-                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <li class="nav-item" th:if="${#authorization.expression('isAuthenticated()')}">
                         <a class="nav-link" href="/bookmarks">
                             <i class="bi bi-bookmark-heart me-1"></i>북마크
                         </a>
                     </li>
                     
-                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <li class="nav-item" th:if="${#authorization.expression('isAuthenticated()')}">
                         <div class="nav-link user-info">
                             <i class="bi bi-person-circle me-1"></i>
-                            <span sec:authentication="name"></span>
+                            <span th:text="${#authentication.name}">사용자</span>
                         </div>
                     </li>
                     
-                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <li class="nav-item" th:if="${#authorization.expression('isAuthenticated()')}">
                         <form th:action="@{/logout}" method="post" class="d-inline">
                             <button type="submit" class="btn btn-outline-light btn-sm logout-btn">
                                 <i class="bi bi-box-arrow-right me-1"></i>로그아웃
@@ -70,13 +77,13 @@
                         </form>
                     </li>
                     
-                    <li class="nav-item" sec:authorize="!isAuthenticated()">
+                    <li class="nav-item" th:unless="${#authorization.expression('isAuthenticated()')}">
                         <a class="nav-link" href="/auth/login">
                             <i class="bi bi-box-arrow-in-right me-1"></i>로그인
                         </a>
                     </li>
                     
-                    <li class="nav-item" sec:authorize="!isAuthenticated()">
+                    <li class="nav-item" th:unless="${#authorization.expression('isAuthenticated()')}">
                         <a href="/auth/signup" class="btn btn-primary ms-2 signup-btn">
                             회원가입
                         </a>

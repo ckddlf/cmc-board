@@ -5,8 +5,9 @@ import com.example.board.domain.user.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;   
+import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,10 +36,29 @@ public class Comment {
 
     private String content;
 
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
     public Comment(Post post, User user, Comment parent, String content) {
         this.post = post;
         this.user = user;
         this.parent = parent;
         this.content = content;
+    }
+
+    // Thymeleaf에서 사용할 메서드 추가
+    public List<Comment> getReplies() {
+        return this.children;
+    }
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

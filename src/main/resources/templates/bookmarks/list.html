@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>내 북마크 - CMC Board</title>
+</head>
+
+<body>
+<div layout:fragment="content">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Header -->
+                <div class="mb-5">
+                    <h1 class="display-5 fw-bold mb-3">
+                        <i class="bi bi-bookmark-heart me-3"></i>
+                        <span class="gradient-text">My Bookmarks</span>
+                    </h1>
+                    <p class="lead text-muted">저장한 게시글 목록입니다</p>
+                </div>
+
+                <!-- Bookmarks List -->
+                <div class="bookmarks-container">
+                    <div class="post-card" th:each="bookmark : ${bookmarks}">
+                        <div class="post-card-header">
+                            <div class="post-meta">
+                                <span class="author">
+                                    <i class="bi bi-person-circle me-1"></i>
+                                    <span th:text="${bookmark.post.user.username}">작성자</span>
+                                </span>
+                                <span class="divider">•</span>
+                                <span class="date" th:text="${#temporals.format(bookmark.post.createdAt, 'yyyy-MM-dd HH:mm')}">
+                                    2025-01-01 12:00
+                                </span>
+                            </div>
+                            
+                            <div class="post-categories">
+                                <span class="badge" 
+                                      th:each="category : ${bookmark.post.categories}"
+                                      th:text="${category.name}">
+                                    카테고리
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="post-card-body">
+                            <h3 class="post-title">
+                                <a th:href="@{/board/{id}(id=${bookmark.post.id})}" 
+                                   th:text="${bookmark.post.title}">
+                                    게시글 제목
+                                </a>
+                            </h3>
+                            
+                            <p class="post-excerpt" 
+                               th:text="${#strings.abbreviate(bookmark.post.content, 150)}">
+                                게시글 내용의 일부가 여기에 표시됩니다...
+                            </p>
+                        </div>
+                        
+                        <div class="post-card-footer">
+                            <div class="post-stats">
+                                <span class="stat-item">
+                                    <i class="bi bi-chat-dots me-1"></i>
+                                    <span th:text="${#lists.size(bookmark.post.comments)}">0</span>
+                                </span>
+                                <span class="stat-item">
+                                    <i class="bi bi-eye me-1"></i>
+                                    <span>0</span>
+                                </span>
+                            </div>
+                            
+                            <div>
+                                <a th:href="@{/board/{id}(id=${bookmark.post.id})}" 
+                                   class="btn btn-sm btn-outline-primary me-2">
+                                    <i class="bi bi-eye me-1"></i>보기
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger"
+                                        th:attr="data-bookmark-id=${bookmark.id}"
+                                        onclick="removeBookmark(this)">
+                                    <i class="bi bi-bookmark-x me-1"></i>삭제
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div th:if="${#lists.isEmpty(bookmarks)}" class="empty-state">
+                        <i class="bi bi-bookmark"></i>
+                        <h3>저장한 북마크가 없습니다</h3>
+                        <p>마음에 드는 게시글을 북마크해보세요!</p>
+                        <a href="/board" class="btn btn-primary">
+                            <i class="bi bi-house-door me-2"></i>게시판으로 이동
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="extra-js">
+    <script>
+        // 북마크 삭제
+        function removeBookmark(button) {
+            if (!confirm('북마크를 삭제하시겠습니까?')) return;
+            
+            const bookmarkId = button.dataset.bookmarkId;
+            
+            fetch(`api/bookmarks/${bookmarkId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok || response.status === 204) {
+                    alert('북마크가 삭제되었습니다.');
+                    location.reload();
+                } else {
+                    alert('삭제에 실패했습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('삭제 중 오류가 발생했습니다.');
+            });
+        }
+
+        // 카드 애니메이션
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.post-card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.add('visible');
+                }, index * 100);
+            });
+        });
+    </script>
+</th:block>
+
+<style>
+    .bookmarks-container {
+        display: grid;
+        gap: 2rem;
+    }
+    
+    .post-card {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .post-card.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+</style>
+</body>
+</html>

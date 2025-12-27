@@ -17,7 +17,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/bookmarks")
+@RequestMapping("/api/bookmarks")
 public class BookmarkController {
 
     private final BookmarkRepository bookmarkRepository;

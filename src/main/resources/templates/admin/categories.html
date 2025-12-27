@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <meta charset="UTF-8">
+    <title>카테고리 관리 - CMC Board</title>
+
+    <!-- CSRF 토큰 -->
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+</head>
+
+<body>
+<div layout:fragment="content">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="form-card">
+                    <div class="form-header">
+                        <h2 class="form-title">
+                            <i class="bi bi-tags me-3"></i>카테고리 관리
+                        </h2>
+                        <p class="form-subtitle">카테고리를 추가, 수정, 삭제할 수 있습니다</p>
+                    </div>
+
+                    <!-- 카테고리 추가 폼 -->
+                    <div class="mb-5">
+                        <h4 class="mb-3">
+                            <i class="bi bi-plus-circle me-2"></i>새 카테고리 추가
+                        </h4>
+                        <form id="addCategoryForm" onsubmit="addCategory(event)">
+                            <div class="input-group input-group-lg">
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="categoryName"
+                                       placeholder="카테고리 이름 입력"
+                                       required
+                                       maxlength="50">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-plus-lg me-2"></i>추가
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- 카테고리 목록 -->
+                    <div>
+                        <h4 class="mb-3">
+                            <i class="bi bi-list-ul me-2"></i>카테고리 목록
+                        </h4>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>이름</th>
+                                        <th style="width: 200px;">작업</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="categoryList">
+                                    <tr th:each="category : ${categories}">
+                                        <td th:text="${category.id}">1</td>
+                                        <td>
+                                            <span class="category-name" 
+                                                  th:id="'name-' + ${category.id}"
+                                                  th:text="${category.name}">
+                                                카테고리명
+                                            </span>
+                                            <input type="text" 
+                                                   class="form-control form-control-sm category-edit-input" 
+                                                   th:id="'edit-' + ${category.id}"
+                                                   th:value="${category.name}"
+                                                   style="display: none;">
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button class="btn btn-outline-primary edit-btn"
+                                                        th:attr="data-id=${category.id}"
+                                                        onclick="editCategory(this)">
+                                                    <i class="bi bi-pencil"></i> 수정
+                                                </button>
+                                                <button class="btn btn-outline-success save-btn"
+                                                        th:attr="data-id=${category.id}"
+                                                        onclick="saveCategory(this)"
+                                                        style="display: none;">
+                                                    <i class="bi bi-check"></i> 저장
+                                                </button>
+                                                <button class="btn btn-outline-secondary cancel-btn"
+                                                        th:attr="data-id=${category.id}"
+                                                        onclick="cancelEdit(this)"
+                                                        style="display: none;">
+                                                    <i class="bi bi-x"></i> 취소
+                                                </button>
+                                                <button class="btn btn-outline-danger delete-btn"
+                                                        th:attr="data-id=${category.id}"
+                                                        onclick="deleteCategory(this)">
+                                                    <i class="bi bi-trash"></i> 삭제
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(categories)}">
+                                        <td colspan="3" class="text-center text-muted py-4">
+                                            등록된 카테고리가 없습니다.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 뒤로가기 -->
+                    <div class="text-center mt-4">
+                        <a href="/board" class="btn btn-outline-secondary btn-lg">
+                            <i class="bi bi-arrow-left me-2"></i>게시판으로 돌아가기
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JS -->
+<th:block layout:fragment="extra-js">
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // CSRF 토큰 가져오기
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+    window.csrfToken = csrfToken;
+    window.csrfHeader = csrfHeader;
+});
+
+// 카테고리 추가
+function addCategory(event) {
+    event.preventDefault();
+    const name = document.getElementById('categoryName').value.trim();
+    if (!name) {
+        alert('카테고리 이름을 입력해주세요.');
+        return;
+    }
+
+    fetch('/categories', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            [window.csrfHeader]: window.csrfToken
+        },
+        body: `name=${encodeURIComponent(name)}`
+    })
+    .then(res => {
+        if (!res.ok) throw new Error('추가 실패');
+        return res.json();
+    })
+    .then(data => {
+        alert('카테고리가 추가되었습니다.');
+        location.reload();
+    })
+    .catch(err => {
+        console.error(err);
+        alert('카테고리 추가 중 오류가 발생했습니다.');
+    });
+}
+
+// 수정 모드 전환
+function editCategory(button) {
+    const id = button.dataset.id;
+    const row = button.closest('tr');
+    row.querySelector(`#name-${id}`).style.display = 'none';
+    row.querySelector(`#edit-${id}`).style.display = 'inline-block';
+    row.querySelector('.edit-btn').style.display = 'none';
+    row.querySelector('.save-btn').style.display = 'inline-block';
+    row.querySelector('.cancel-btn').style.display = 'inline-block';
+    row.querySelector('.delete-btn').style.display = 'none';
+}
+
+// 수정 취소
+function cancelEdit(button) {
+    const id = button.dataset.id;
+    const row = button.closest('tr');
+    row.querySelector(`#name-${id}`).style.display = 'inline';
+    row.querySelector(`#edit-${id}`).style.display = 'none';
+    row.querySelector('.edit-btn').style.display = 'inline-block';
+    row.querySelector('.save-btn').style.display = 'none';
+    row.querySelector('.cancel-btn').style.display = 'none';
+    row.querySelector('.delete-btn').style.display = 'inline-block';
+}
+
+// 카테고리 수정 저장
+function saveCategory(button) {
+    const id = button.dataset.id;
+    const newName = document.getElementById(`edit-${id}`).value.trim();
+    if (!newName) {
+        alert('카테고리 이름을 입력해주세요.');
+        return;
+    }
+
+    fetch(`/categories/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            [window.csrfHeader]: window.csrfToken
+        },
+        body: `name=${encodeURIComponent(newName)}`
+    })
+    .then(res => {
+        if (!res.ok) throw new Error('수정 실패');
+        return res.json();
+    })
+    .then(data => {
+        alert('카테고리가 수정되었습니다.');
+        location.reload();
+    })
+    .catch(err => {
+        console.error(err);
+        alert('카테고리 수정 중 오류가 발생했습니다.');
+    });
+}
+
+// 카테고리 삭제
+function deleteCategory(button) {
+    const id = button.dataset.id;
+    if (!confirm('정말 삭제하시겠습니까?\n이 카테고리를 사용하는 게시글이 있을 수 있습니다.')) return;
+
+    fetch(`/categories/${id}`, {
+        method: 'DELETE',
+        headers: { [window.csrfHeader]: window.csrfToken }
+    })
+    .then(res => {
+        if (!res.ok && res.status !== 204) throw new Error('삭제 실패');
+        alert('카테고리가 삭제되었습니다.');
+        location.reload();
+    })
+    .catch(err => {
+        console.error(err);
+        alert('카테고리 삭제 중 오류가 발생했습니다.');
+    });
+}
+</script>
+</th:block>
+
+<style>
+    .category-edit-input {
+        width: 300px;
+        display: inline-block;
+    }
+
+    .table th {
+        background-color: var(--primary-subtle);
+        font-weight: 600;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+</style>
+</body>
+</html>

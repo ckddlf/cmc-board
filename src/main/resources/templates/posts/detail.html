@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+<html lang="ko" 
+      xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layouts/default}">
 <head>
     <title th:text="${post.title} + ' - CMC Board'">게시글 - CMC Board</title>
@@ -51,7 +52,7 @@
                                     <i class="bi bi-pencil me-1"></i>수정
                                 </a>
                                 <button class="btn btn-outline-danger btn-sm" 
-                                        onclick="deletePost()">
+                                        th:onclick="'deletePost(' + ${post.id} + ')'">
                                     <i class="bi bi-trash me-1"></i>삭제
                                 </button>
                             </div>
@@ -59,8 +60,8 @@
                     </header>
 
                     <!-- Content -->
-                    <div class="post-content" th:utext="${contentWithBr}">
-                     게시글 내용
+                    <div class="post-content">
+                        <p th:text="${post.content}">게시글 내용</p>
                     </div>
 
                     <!-- Footer Actions -->
@@ -68,7 +69,7 @@
                         <div class="post-stats">
                             <span class="stat-item">
                                 <i class="bi bi-chat-dots me-1"></i>
-                                댓글 <strong th:text="${post.comments.size()}">0</strong>
+                                댓글 <strong th:text="${#lists.size(post.comments)}">0</strong>
                             </span>
                             <span class="stat-item">
                                 <i class="bi bi-eye me-1"></i>
@@ -79,7 +80,7 @@
                         <button class="btn btn-bookmark" 
                                 th:attr="data-post-id=${post.id}"
                                 onclick="toggleBookmark(this)"
-                                sec:authorize="isAuthenticated()">
+                                th:if="${isAuthenticated}">
                             <i class="bi bi-bookmark"></i>
                             <span>북마크</span>
                         </button>
@@ -90,11 +91,11 @@
                 <section class="comments-section mt-5">
                     <h3 class="comments-title mb-4">
                         <i class="bi bi-chat-left-text me-2"></i>
-                        댓글 <span class="badge bg-primary" th:text="${post.comments.size()}">0</span>
+                        댓글 <span class="badge bg-primary" th:text="${#lists.size(post.comments)}">0</span>
                     </h3>
 
                     <!-- Comment Form -->
-                    <div class="comment-form-card mb-4" sec:authorize="isAuthenticated()">
+                    <div class="comment-form-card mb-4" th:if="${isAuthenticated}">
                         <form id="commentForm" onsubmit="submitComment(event)">
                             <input type="hidden" th:value="${post.id}" id="postId">
                             <div class="mb-3">
@@ -112,7 +113,7 @@
                         </form>
                     </div>
 
-                    <div sec:authorize="!isAuthenticated()" class="alert alert-info">
+                    <div th:unless="${isAuthenticated}" class="alert alert-info">
                         <i class="bi bi-info-circle me-2"></i>
                         댓글을 작성하려면 <a href="/auth/login">로그인</a>이 필요합니다.
                     </div>
@@ -130,7 +131,7 @@
                                 <div class="comment-header">
                                     <strong class="comment-author" th:text="${comment.user.username}">작성자</strong>
                                     <span class="comment-date" 
-                                          th:text="${#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm')}">
+                                          th:text="${comment.createdAt != null ? #temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm') : '방금'}">
                                         2025-01-01 12:00
                                     </span>
                                 </div>
@@ -140,11 +141,11 @@
                                 <div class="comment-actions">
                                     <button class="btn btn-link btn-sm" 
                                             th:attr="onclick='showReplyForm(' + ${comment.id} + ')'"
-                                            sec:authorize="isAuthenticated()">
+                                            th:if="${isAuthenticated}">
                                         <i class="bi bi-reply me-1"></i>답글
                                     </button>
                                     <button class="btn btn-link btn-sm text-danger" 
-                                            th:if="${#authentication.name == comment.user.username}"
+                                            th:if="${isAuthenticated and isOwner}"
                                             th:attr="onclick='deleteComment(' + ${comment.id} + ')'">
                                         <i class="bi bi-trash me-1"></i>삭제
                                     </button>
@@ -154,7 +155,7 @@
                                 <div class="reply-form mt-3" 
                                      th:id="'replyForm-' + ${comment.id}" 
                                      style="display: none;"
-                                     sec:authorize="isAuthenticated()">
+                                     th:if="${isAuthenticated}">
                                     <form th:attr="onsubmit='submitReply(event, ' + ${comment.id} + ')'">
                                         <textarea class="form-control mb-2" 
                                                   rows="3" 
@@ -174,7 +175,7 @@
                                 </div>
 
                                 <!-- Replies -->
-                                <div class="replies" th:if="${!comment.replies.isEmpty()}">
+                                <div class="replies" th:if="${comment.replies != null and !#lists.isEmpty(comment.replies)}">
                                     <div class="comment-item reply" 
                                          th:each="reply : ${comment.replies}">
                                         <div class="comment-avatar">
@@ -184,7 +185,7 @@
                                             <div class="comment-header">
                                                 <strong class="comment-author" th:text="${reply.user.username}">작성자</strong>
                                                 <span class="comment-date" 
-                                                      th:text="${#temporals.format(reply.createdAt, 'yyyy-MM-dd HH:mm')}">
+                                                      th:text="${reply.createdAt != null ? #temporals.format(reply.createdAt, 'yyyy-MM-dd HH:mm') : '방금'}">
                                                     2025-01-01 12:00
                                                 </span>
                                             </div>
@@ -193,7 +194,7 @@
                                             </div>
                                             <div class="comment-actions">
                                                 <button class="btn btn-link btn-sm text-danger" 
-                                                        th:if="${#authentication.name == reply.user.username}"
+                                                        th:if="${isAuthenticated and isOwner}"
                                                         th:attr="onclick='deleteComment(' + ${reply.id} + ')'">
                                                     <i class="bi bi-trash me-1"></i>삭제
                                                 </button>
@@ -205,7 +206,7 @@
                         </div>
 
                         <!-- Empty State -->
-                        <div th:if="${post.comments.isEmpty()}" class="empty-comments">
+                        <div th:if="${#lists.isEmpty(post.comments)}" class="empty-comments">
                             <i class="bi bi-chat-dots"></i>
                             <p>첫 번째 댓글을 작성해보세요!</p>
                         </div>
@@ -218,21 +219,22 @@
 
 <th:block layout:fragment="extra-js">
     <script th:inline="javascript">
+        /*<![CDATA[*/
         const postId = /*[[${post.id}]]*/ 1;
         const isAuthenticated = /*[[${isAuthenticated}]]*/ false;
 
         // 게시글 삭제
-        function deletePost() {
+        function deletePost(id) {
             if (!confirm('정말 삭제하시겠습니까?')) return;
             
-            fetch(`/posts/${postId}`, {
+            fetch(`/posts/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json'
                 }
             })
             .then(response => {
-                if (response.ok) {
+                if (response.ok || response.status === 204) {
                     alert('게시글이 삭제되었습니다.');
                     window.location.href = '/board';
                 } else {
@@ -308,7 +310,7 @@
                 method: 'DELETE'
             })
             .then(response => {
-                if (response.ok) {
+                if (response.ok || response.status === 204) {
                     alert('댓글이 삭제되었습니다.');
                     location.reload();
                 } else {
@@ -338,7 +340,6 @@
             const isBookmarked = icon.classList.contains('bi-bookmark-fill');
             
             if (isBookmarked) {
-                // 북마크 제거 로직 (구현 필요)
                 icon.classList.remove('bi-bookmark-fill');
                 icon.classList.add('bi-bookmark');
             } else {
@@ -369,6 +370,7 @@
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
+        /*]]>*/
     </script>
 </th:block>
 </body>

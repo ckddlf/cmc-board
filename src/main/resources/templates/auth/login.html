@@ -18,7 +18,8 @@
                 <p class="auth-subtitle">로그인하여 다양한 이야기를 나눠보세요</p>
             </div>
 
-            <form id="loginForm" onsubmit="login(event)">
+            <!-- Spring Security 폼 로그인 -->
+            <form th:action="@{/auth/login}" method="post">
                 <div class="mb-4">
                     <label for="username" class="form-label">
                         <i class="bi bi-person me-2"></i>아이디
@@ -44,8 +45,13 @@
                            required>
                 </div>
 
+                <!-- 에러 메시지 -->
+                <div th:if="${param.error}" class="alert alert-danger mb-4">
+                    아이디 또는 비밀번호가 일치하지 않습니다.
+                </div>
+
                 <div class="mb-4 form-check">
-                    <input type="checkbox" class="form-check-input" id="rememberMe">
+                    <input type="checkbox" class="form-check-input" id="rememberMe" name="remember-me">
                     <label class="form-check-label" for="rememberMe">
                         로그인 상태 유지
                     </label>
@@ -81,47 +87,5 @@
         </div>
     </div>
 </div>
-
-<th:block layout:fragment="extra-js">
-    <script>
-        function login(event) {
-            event.preventDefault();
-            
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            fetch('/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
-            })
-            .then(response => {
-                if (response.ok) {
-                    return response.text();
-                } else {
-                    throw new Error('로그인에 실패했습니다.');
-                }
-            })
-            .then(data => {
-                alert('로그인 성공!');
-                window.location.href = '/board';
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('아이디 또는 비밀번호가 일치하지 않습니다.');
-            });
-        }
-
-        // 엔터키 처리
-        document.getElementById('loginForm').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                login(e);
-            }
-        });
-    </script>
-</th:block>
 </body>
 </html>

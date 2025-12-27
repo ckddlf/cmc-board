@@ -7,8 +7,8 @@
 
 컨트롤러 레이어의 API 동작을 검증한 결과입니다.  
 아래 이미지는 `PostControllerTest`와 `CommentControllerTest` 등 컨트롤러 관련 테스트 실행 결과를 보여줍니다.
+![Controller Test Result](https://github.com/user-attachments/assets/5bdc893d-6b4c-4166-915b-73c2047df526)
 
-![Controller Test Result](https://github.com/user-attachments/assets/87201531-7c1c-43c8-89fe-0de4853146f9)
 
 - 테스트 건수: 4개 (PostController: 1, CommentController: 3)  
 - 실패/에러: 0  
@@ -21,7 +21,7 @@
 서비스 레이어의 비즈니스 로직 검증 결과입니다.  
 아래 이미지는 `AuthServiceTest`, `BookmarkServiceTest`, `CategoryServiceTest`, `PostServiceTest`, `CommentServiceTest` 실행 결과입니다.
 
-![Service Test Result](https://github.com/user-attachments/assets/5bdc893d-6b4c-4166-915b-73c2047df526)
+![Service Test Result](https://github.com/user-attachments/assets/87201531-7c1c-43c8-89fe-0de4853146f9)
 
 - 테스트 건수: 22개  
 - 실패/에러: 0  

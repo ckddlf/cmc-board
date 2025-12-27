@@ -1,5 +1,7 @@
 package com.example.board.service;
 
+import com.example.board.domain.category.Category;
+import com.example.board.domain.category.CategoryRepository;
 import com.example.board.domain.post.Post;
 import com.example.board.domain.post.PostRepository;
 import com.example.board.domain.user.User;
@@ -18,11 +20,16 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
 
-    public Long create(String username, String title, String content) {
+    public Long create(String username, String title, String content, List<Long> categoryIds) {
 
         User user = userRepository.findByUsername(username).orElseThrow();
         Post post = new Post(title, content, user);
+        for (Long categoryId : categoryIds) {
+            Category category = categoryRepository.findById(categoryId).orElseThrow();
+            post.addCategory(category);
+        }
         return postRepository.save(post).getId();
     }
 
@@ -31,7 +38,8 @@ public class PostService {
         return postRepository.findAll();
     }
 
-    public void update(Long postId, String username, String title, String content) {
+    public void update(Long postId, String username, 
+                       String title, String content,List<Long> categoryIds) {
 
         Post post = postRepository.findById(postId).orElseThrow();
 
@@ -40,6 +48,13 @@ public class PostService {
         }
 
         post.update(title, content);
+
+        post.clearCategories();
+
+        for (Long categoryId : categoryIds) {
+            Category category = categoryRepository.findById(categoryId).orElseThrow();
+            post.addCategory(category);
+        }
     }
 
     public void delete(Long postId, String username) {

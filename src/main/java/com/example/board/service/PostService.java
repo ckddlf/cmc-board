@@ -91,6 +91,7 @@ public class PostService {
                 .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
 
         if (!post.getUser().getUsername().equals(username)) {
+            
             throw new AccessDeniedException("본인 글만 삭제 가능합니다.");
         }
 
